@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PipelineStage {
+  NEW
+  CONTACTED
+  DISCOVERY_SCHEDULED
+  PROPOSAL_SENT
+  CLIENT
+  LOST
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leads     Lead[]
+}
+
+model Lead {
+  id        String        @id @default(cuid())
+  contact   Contact       @relation(fields: [contactId], references: [id])
+  contactId String
+  stage     PipelineStage @default(NEW)
+  source    String?
+  notes     Note[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+}
