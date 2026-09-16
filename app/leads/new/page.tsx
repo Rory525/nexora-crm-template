@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { requireAuth } from "@/lib/requireAuth";
 
 const STAGES = ["NEW", "CONTACTED", "DISCOVERY_SCHEDULED", "PROPOSAL_SENT", "CLIENT", "LOST"] as const;
 
-export default function NewLead() {
+export default async function NewLead() {
+  await requireAuth();
   async function createLead(formData: FormData) {
     "use server";
 

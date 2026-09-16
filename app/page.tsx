@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/requireAuth";
 
 const STAGE_STYLES: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
@@ -10,6 +11,8 @@ const STAGE_STYLES: Record<string, string> = {
 };
 
 export default async function Home() {
+  await requireAuth();
+
   const leads = await prisma.lead.findMany({
     include: { contact: true },
     orderBy: { createdAt: "desc" },
@@ -19,7 +22,15 @@ export default async function Home() {
     <main className="min-h-screen bg-slate-50 text-slate-900 p-8">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-slate-900">Nexora CRM</h1>
-        <h2 className="mt-1 text-sm font-semibold uppercase tracking-wide text-indigo-600">Leads</h2>
+        <div className="mt-1 flex items-center justify-between">
+  <h2 className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Leads</h2>
+  <a
+    href="/leads/new"
+    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+  >
+    + New Lead
+  </a>
+</div>
 
         <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
