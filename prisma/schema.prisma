@@ -6,6 +6,10 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─────────────────────────────────────────
+// Pre-sale (existing, unchanged)
+// ─────────────────────────────────────────
+
 enum PipelineStage {
   NEW
   CONTACTED
@@ -16,33 +20,40 @@ enum PipelineStage {
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  company   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  leads     Lead[]
+  id         String    @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  company    String?
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  leads      Lead[]
+  projects   Project[]
 }
 
 model Lead {
   id        String        @id @default(cuid())
-  contact   Contact       @relation(fields: [contactId], references: [id])
+  contact   Contact       @relation(fields: [contactId], references: [id], onDelete: Restrict)
   contactId String
   stage     PipelineStage @default(NEW)
   source    String?
   notes     Note[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+  projects  Project[]
+
+  @@index([contactId])
 }
 
 model Note {
   id        String   @id @default(cuid())
-  lead      Lead     @relation(fields: [leadId], references: [id])
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
   leadId    String
   body      String
   createdAt DateTime @default(now())
+
+  @@index([leadId])
 }
 
 model User {
@@ -52,4 +63,178 @@ model User {
   password      String
   emailVerified DateTime?
   image         String?
+}
+
+// ─────────────────────────────────────────
+// Post-sale (new)
+// ─────────────────────────────────────────
+
+enum ClientStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+enum ProjectStage {
+  KICKOFF
+  PLANNING
+  BUILD
+  CLIENT_REVIEW
+  TESTING
+  READY_FOR_LAUNCH
+  LIVE
+  SUPPORT
+  COMPLETE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  BLOCKED
+  COMPLETE
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  BLOCKED
+  COMPLETE
+}
+
+enum InvoiceType {
+  DEPOSIT
+  MILESTONE
+  SUPPORT
+  FINAL
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  DISPUTED
+  WAIVED
+}
+
+model Project {
+  id                   String       @id @default(cuid())
+  contact              Contact      @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  contactId            String
+  lead                 Lead?        @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  leadId               String?
+  name                 String
+  clientStatus         ClientStatus @default(ACTIVE)
+  projectStage         ProjectStage @default(KICKOFF)
+  priority             Priority     @default(MEDIUM)
+  proposalDate         DateTime?
+  msaSignedDate        DateTime?
+  sowSignedDate        DateTime?
+  depositPaidDate      DateTime?
+  projectStartDate     DateTime?
+  targetLaunchDate     DateTime?
+  actualLaunchDate     DateTime?
+  projectFee           Decimal      @db.Decimal(10, 2)
+  supportFeeMonthly    Decimal?     @db.Decimal(10, 2)
+  nextAction           String?
+  nextActionDue        DateTime?
+  communicationChannel String?
+  notes                String?
+  archivedAt           DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  milestones           Milestone[]
+  invoices             Invoice[]
+  tasks                Task[]
+
+  @@index([contactId])
+  @@index([leadId])
+  @@index([clientStatus])
+  @@index([projectStage])
+  @@index([priority])
+  @@index([nextActionDue])
+}
+
+model Milestone {
+  id                   String          @id @default(cuid())
+  project              Project         @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  projectId            String
+  name                 String
+  owner                String
+  status               MilestoneStatus @default(NOT_STARTED)
+  targetDate           DateTime?
+  completedDate        DateTime?
+  billingTrigger       Boolean         @default(false)
+  invoiceAmount        Decimal?        @db.Decimal(10, 2)
+  clientApprovalNeeded Boolean         @default(false)
+  notes                String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  invoices             Invoice[]
+  tasks                Task[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([targetDate])
+}
+
+model Invoice {
+  id                 String        @id @default(cuid())
+  project            Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  projectId          String
+  milestone          Milestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  milestoneId        String?
+  invoiceNumber      String?       @unique
+  invoiceType        InvoiceType
+  description        String?
+  amount             Decimal       @db.Decimal(10, 2)
+  status             PaymentStatus @default(PENDING)
+  invoiceDate        DateTime?
+  dueDate            DateTime?
+  paidDate           DateTime?
+  paymentMethod      String?
+  reference          String?
+  externalInvoiceId  String?
+  billingPeriodStart DateTime?
+  billingPeriodEnd   DateTime?
+  notes              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  projectId   String
+  milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  milestoneId String?
+  title       String
+  owner       String
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(NOT_STARTED)
+  dueDate     DateTime?
+  waitingOn   String?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
 }
