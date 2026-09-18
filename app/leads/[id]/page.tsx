@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/requireAuth";
+import ConvertToProjectButton from "@/components/ConvertToProjectButton";
 
 const STAGES = ["NEW", "CONTACTED", "DISCOVERY_SCHEDULED", "PROPOSAL_SENT", "CLIENT", "LOST"] as const;
 
@@ -100,6 +101,7 @@ export default async function LeadDetail({
               placeholder="Add a note..."
               className="w-full resize-none rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
+          
             <button
               type="submit"
               className="mt-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
@@ -107,7 +109,7 @@ export default async function LeadDetail({
               Add note
             </button>
           </form>
-
+<ConvertToProjectButton leadId={lead.id} />
           {lead.notes.length === 0 ? (
             <p className="mt-4 text-sm text-slate-400">No notes yet.</p>
           ) : (
