@@ -19,7 +19,7 @@ export default async function NewProject() {
 
   async function createProject(formData: FormData) {
     "use server";
-
+await requireAuth();
     const contactId = String(formData.get("contactId") || "");
     const name = String(formData.get("name") || "").trim();
     const projectStage = String(formData.get("projectStage") || "KICKOFF");

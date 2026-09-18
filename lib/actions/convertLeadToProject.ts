@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { PipelineStage } from "@prisma/client";
+import { requireAuth } from "@/lib/requireAuth";
 
 /**
  * Converts a Lead into a Project in one step: pulls the Contact off the
@@ -22,6 +23,8 @@ import { PipelineStage } from "@prisma/client";
  * and can be filled in from the Project detail page afterward.
  */
 export async function convertLeadToProject(formData: FormData) {
+  await requireAuth();
+
   const leadId = formData.get("leadId") as string;
   const name = formData.get("name") as string;
   const projectFeeRaw = formData.get("projectFee") as string;

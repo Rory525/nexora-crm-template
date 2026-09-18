@@ -34,6 +34,7 @@ export default async function LeadDetail({
 
   async function updateStage(formData: FormData) {
     "use server";
+    await requireAuth();
     const stage = formData.get("stage") as string;
     await prisma.lead.update({
       where: { id },
@@ -44,6 +45,7 @@ export default async function LeadDetail({
 
   async function addNote(formData: FormData) {
     "use server";
+    await requireAuth();
     const body = formData.get("body") as string;
     if (!body?.trim()) return;
     await prisma.note.create({

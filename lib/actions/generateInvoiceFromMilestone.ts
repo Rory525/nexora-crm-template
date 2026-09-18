@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { InvoiceType, PaymentStatus } from "@prisma/client";
+import { requireAuth } from "@/lib/requireAuth";
 
 /**
  * Generates an Invoice directly from a completed billing-trigger Milestone
@@ -32,6 +33,8 @@ import { InvoiceType, PaymentStatus } from "@prisma/client";
  * without a full navigation.
  */
 export async function generateInvoiceFromMilestone(formData: FormData) {
+  await requireAuth();
+
   const milestoneId = formData.get("milestoneId") as string;
 
   if (!milestoneId) {

@@ -8,7 +8,7 @@ export default async function NewLead() {
   await requireAuth();
   async function createLead(formData: FormData) {
     "use server";
-
+await requireAuth();
     const name = String(formData.get("name") || "").trim();
     const email = String(formData.get("email") || "").trim();
     const phone = String(formData.get("phone") || "").trim();

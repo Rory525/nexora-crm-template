@@ -77,6 +77,7 @@ export default async function ProjectDetail({
 
   async function addTask(formData: FormData) {
     "use server";
+    await requireAuth();
     const title = String(formData.get("title") || "").trim();
     const owner = String(formData.get("owner") || "").trim();
     const priority = String(formData.get("priority") || "MEDIUM");
@@ -98,6 +99,7 @@ export default async function ProjectDetail({
 
   async function updateTaskStatus(formData: FormData) {
     "use server";
+    await requireAuth();
     const taskId = String(formData.get("taskId") || "");
     const status = String(formData.get("status") || "");
     if (!taskId || !status) return;
@@ -111,6 +113,7 @@ export default async function ProjectDetail({
 
   async function addMilestone(formData: FormData) {
     "use server";
+    await requireAuth();
     const name = String(formData.get("name") || "").trim();
     const owner = String(formData.get("owner") || "").trim();
     const targetDateRaw = String(formData.get("targetDate") || "");
@@ -134,6 +137,7 @@ export default async function ProjectDetail({
 
   async function updateMilestoneStatus(formData: FormData) {
     "use server";
+    await requireAuth();
     const milestoneId = String(formData.get("milestoneId") || "");
     const status = String(formData.get("status") || "");
     if (!milestoneId || !status) return;
@@ -150,6 +154,7 @@ export default async function ProjectDetail({
 
   async function addInvoice(formData: FormData) {
     "use server";
+    await requireAuth();
     const invoiceType = String(formData.get("invoiceType") || "OTHER");
     const amount = String(formData.get("amount") || "");
     const description = String(formData.get("description") || "").trim();
@@ -173,6 +178,7 @@ export default async function ProjectDetail({
 
   async function updateInvoiceStatus(formData: FormData) {
     "use server";
+    await requireAuth();
     const invoiceId = String(formData.get("invoiceId") || "");
     const status = String(formData.get("status") || "");
     if (!invoiceId || !status) return;
