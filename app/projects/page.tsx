@@ -26,11 +26,18 @@ const PRIORITY_STYLES: Record<string, string> = {
   URGENT: "bg-red-100 text-red-700",
 };
 
-export default async function ProjectsList() {
+export default async function ProjectsList({
+  searchParams,
+}: {
+  searchParams: Promise<{ archived?: string }>;
+}) {
   await requireAuth();
 
+  const { archived } = await searchParams;
+  const showArchived = archived === "true";
+
   const projects = await prisma.project.findMany({
-    where: { archivedAt: null },
+    where: showArchived ? { archivedAt: { not: null } } : { archivedAt: null },
     include: { contact: true },
     orderBy: { createdAt: "desc" },
   });
@@ -41,14 +48,24 @@ export default async function ProjectsList() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Nexora CRM</h1>
-            <h2 className="mt-1 text-sm font-semibold uppercase tracking-wide text-indigo-600">Projects</h2>
+            <h2 className="mt-1 text-sm font-semibold uppercase tracking-wide text-indigo-600">
+              {showArchived ? "Archived Projects" : "Projects"}
+            </h2>
           </div>
-          <a
-            href="/projects/new"
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-          >
-            + New Project
-          </a>
+          <div className="flex items-center gap-3">
+            <a     
+              href={showArchived ? "/projects" : "/projects?archived=true"}
+              className="text-sm font-medium text-slate-500 hover:text-indigo-600"
+            >
+              {showArchived ? "Show active" : "Show archived"}
+            </a>
+            <a
+              href="/projects/new"
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+            >
+              + New Project
+            </a>
+          </div>
         </div>
 
         <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -61,7 +78,11 @@ export default async function ProjectsList() {
                 <th className="px-4 py-3 font-semibold">Stage</th>
                 <th className="px-4 py-3 font-semibold">Priority</th>
                 <th className="px-4 py-3 font-semibold">Project Fee</th>
-                <th className="px-4 py-3 font-semibold">Next Action Due</th>
+                {showArchived ? (
+                  <th className="px-4 py-3 font-semibold">Archived</th>
+                ) : (
+                  <th className="px-4 py-3 font-semibold">Next Action Due</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -94,15 +115,21 @@ export default async function ProjectsList() {
                   <td className="px-4 py-3 text-slate-600">
                     ${Number(project.projectFee).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {project.nextActionDue ? project.nextActionDue.toLocaleDateString() : "—"}
-                  </td>
+                  {showArchived ? (
+                    <td className="px-4 py-3 text-slate-500">
+                      {project.archivedAt ? project.archivedAt.toLocaleDateString() : "—"}
+                    </td>
+                  ) : (
+                    <td className="px-4 py-3 text-slate-500">
+                      {project.nextActionDue ? project.nextActionDue.toLocaleDateString() : "—"}
+                    </td>
+                  )}
                 </tr>
               ))}
               {projects.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
-                    No projects yet.
+                    {showArchived ? "No archived projects." : "No projects yet."}
                   </td>
                 </tr>
               )}

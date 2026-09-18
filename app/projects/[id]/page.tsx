@@ -192,7 +192,20 @@ export default async function ProjectDetail({
     });
     revalidatePath(`/projects/${id}`);
   }
+  async function toggleProjectArchive(formData: FormData) {
+    "use server";
+    await requireAuth();
 
+    const isArchived = formData.get("isArchived") === "true";
+
+    await prisma.project.update({
+      where: { id },
+      data: { archivedAt: isArchived ? null : new Date() },
+    });
+
+    revalidatePath(`/projects/${id}`);
+    revalidatePath("/projects");
+  }
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 p-8">
       <div className="max-w-3xl mx-auto">
@@ -239,6 +252,20 @@ export default async function ProjectDetail({
               </div>
             )}
           </div>
+                    <form action={toggleProjectArchive} className="mt-4 border-t border-slate-100 pt-4">
+            <input type="hidden" name="isArchived" value={project.archivedAt ? "true" : "false"} />
+            <button
+              type="submit"
+              className="text-sm font-medium text-slate-500 hover:text-red-600"
+            >
+              {project.archivedAt ? "Un-archive Project" : "Archive Project"}
+            </button>
+            {project.archivedAt && (
+              <span className="ml-2 text-xs text-slate-400">
+                Archived {project.archivedAt.toLocaleDateString()}
+              </span>
+            )}
+          </form>
         </div>
 
         <div className="mt-6">
