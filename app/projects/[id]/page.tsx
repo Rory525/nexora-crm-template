@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/requireAuth";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import GenerateInvoiceButton from "@/components/GenerateInvoiceButton";
 
 const CLIENT_STATUS_STYLES: Record<string, string> = {
   ACTIVE: "bg-emerald-100 text-emerald-700",
@@ -283,7 +284,7 @@ export default async function ProjectDetail({
           ) : (
             <ul className="mt-4 space-y-2">
               {project.milestones.map((milestone) => (
-                <li key={milestone.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                                <li key={milestone.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
                   <div>
                     <p className="text-sm font-medium text-slate-800">
                       {milestone.name}
@@ -297,6 +298,7 @@ export default async function ProjectDetail({
                       {milestone.invoiceAmount ? ` · $${Number(milestone.invoiceAmount).toLocaleString()}` : ""}
                     </p>
                   </div>
+                  <div className="flex items-center gap-2">
                   <form action={updateMilestoneStatus} className="flex items-center gap-2">
                     <input type="hidden" name="milestoneId" value={milestone.id} />
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${MILESTONE_STATUS_STYLES[milestone.status] ?? "bg-slate-100 text-slate-600"}`}>
@@ -315,15 +317,21 @@ export default async function ProjectDetail({
                       type="submit"
                       className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
                     >
-                      Update
-                    </button>
-                  </form>
+                        Update
+                      </button>
+                    </form>
+                    {milestone.billingTrigger &&
+                      milestone.status === "COMPLETE" &&
+                      !project.invoices.some((inv) => inv.milestoneId === milestone.id) && (
+                        <GenerateInvoiceButton milestoneId={milestone.id} />
+                      )}
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
-
+ 
         <div className="mt-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Tasks</h2>
 
