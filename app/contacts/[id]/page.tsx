@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { put, del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
@@ -18,6 +19,7 @@ export default async function ContactDetail({
     include: {
       leads: true,
       projects: true,
+      documents: { orderBy: { uploadedAt: "desc" } },
     },
   });
 
@@ -46,6 +48,60 @@ export default async function ContactDetail({
         phone: phone?.trim() || null,
         company: company?.trim() || null,
       },
+    });
+
+    revalidatePath(`/contacts/${id}`);
+  }
+
+  async function uploadDocument(formData: FormData) {
+    "use server";
+    await requireAuth();
+
+    const file = formData.get("file") as File;
+    const label = formData.get("label") as string;
+
+    if (!file || file.size === 0) {
+      throw new Error("Please choose a file to upload.");
+    }
+
+    const MAX_SIZE = 20 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      throw new Error("File is too large — please upload something under 20MB.");
+    }
+
+    const blob = await put(file.name, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+
+    await prisma.document.create({
+      data: {
+        contactId: id,
+        fileName: file.name,
+        label: label?.trim() || null,
+        url: blob.url,
+        fileSize: file.size,
+      },
+    });
+
+    revalidatePath(`/contacts/${id}`);
+  }
+
+  async function deleteDocument(formData: FormData) {
+    "use server";
+    await requireAuth();
+
+    const documentId = formData.get("documentId") as string;
+
+    const document = await prisma.document.findUniqueOrThrow({
+      where: { id: documentId },
+      select: { url: true },
+    });
+
+    await del(document.url);
+
+    await prisma.document.delete({
+      where: { id: documentId },
     });
 
     revalidatePath(`/contacts/${id}`);
@@ -161,6 +217,70 @@ export default async function ContactDetail({
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Documents ({contact.documents.length})
+          </h2>
+
+          {contact.documents.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-400">No documents uploaded yet.</p>
+          ) : (
+            <ul className="mt-3 divide-y divide-slate-100">
+              {contact.documents.map((document) => (
+                <li key={document.id} className="flex items-center justify-between py-2">
+                  <div>
+                    <Link
+                      href={document.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-800 font-medium"
+                    >
+                      {document.label || document.fileName}
+                    </Link>
+                    <div className="text-xs text-slate-400">
+                      {document.fileName} — uploaded {document.uploadedAt.toLocaleDateString()}
+                    </div>
+                  </div>
+                  <form action={deleteDocument}>
+                    <input type="hidden" name="documentId" value={document.id} />
+                    <button
+                      type="submit"
+                      className="text-xs font-medium text-slate-400 hover:text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form
+            action={uploadDocument}
+            className="mt-4 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-4"
+          >
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-sm font-medium text-slate-700">File</label>
+              <input type="file" name="file" required className="mt-1 w-full text-sm" />
+            </div>
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-sm font-medium text-slate-700">Label (optional)</label>
+              <input
+                type="text"
+                name="label"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                placeholder="e.g. Signed Service Agreement"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Upload
+            </button>
+          </form>
         </div>
       </div>
     </main>

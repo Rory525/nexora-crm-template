@@ -30,6 +30,20 @@ model Contact {
   updatedAt  DateTime  @updatedAt
   leads      Lead[]
   projects   Project[]
+  documents  Document[]
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  contactId  String
+  fileName   String
+  label      String?
+  url        String
+  fileSize   Int
+  uploadedAt DateTime @default(now())
+
+  @@index([contactId])
 }
 
 model Lead {
