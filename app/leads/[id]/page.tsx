@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import DeleteButton from "@/components/DeleteButton";
+import { deleteLead } from "@/lib/actions/deleteLead";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/requireAuth";
 import ConvertToProjectButton from "@/components/ConvertToProjectButton";
+
 
 const STAGES = ["NEW", "CONTACTED", "DISCOVERY_SCHEDULED", "PROPOSAL_SENT", "CLIENT", "LOST"] as const;
 
@@ -90,6 +93,14 @@ export default async function LeadDetail({
           <p className="mt-4 text-sm text-slate-500">
             <span className="font-semibold text-slate-700">Source:</span> {lead.source}
           </p>
+
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <DeleteButton
+              action={deleteLead.bind(null, lead.id)}
+              confirmMessage="Delete this lead? This can't be undone."
+              label="Delete Lead"
+            />
+          </div>
         </div>
 
         <div className="mt-6">

@@ -3,6 +3,11 @@ import { requireAuth } from "@/lib/requireAuth";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import GenerateInvoiceButton from "@/components/GenerateInvoiceButton";
+import DeleteButton from "@/components/DeleteButton";
+import { deleteProject } from "@/lib/actions/deleteProject";
+import { deleteMilestone } from "@/lib/actions/deleteMilestone";
+import { deleteTask } from "@/lib/actions/deleteTask";
+import { deleteInvoice } from "@/lib/actions/deleteInvoice";
 
 const CLIENT_STATUS_STYLES: Record<string, string> = {
   ACTIVE: "bg-emerald-100 text-emerald-700",
@@ -266,6 +271,14 @@ export default async function ProjectDetail({
               </span>
             )}
           </form>
+
+          <div className="mt-2">
+            <DeleteButton
+              action={deleteProject.bind(null, project.id)}
+              confirmMessage="Delete this project? This can't be undone."
+              label="Delete Project"
+            />
+          </div>
         </div>
 
         <div className="mt-6">
@@ -358,6 +371,11 @@ export default async function ProjectDetail({
                       !project.invoices.some((inv) => inv.milestoneId === milestone.id) && (
                         <GenerateInvoiceButton milestoneId={milestone.id} />
                       )}
+                    <DeleteButton
+                      action={deleteMilestone.bind(null, milestone.id, project.id)}
+                      confirmMessage="Delete this milestone? Any linked invoices/tasks will be unlinked, not deleted."
+                      label="Delete"
+                    />
                   </div>
                 </li>
               ))}
@@ -420,27 +438,34 @@ export default async function ProjectDetail({
                       {task.dueDate ? ` · Due ${task.dueDate.toLocaleDateString()}` : ""}
                     </p>
                   </div>
-                  <form action={updateTaskStatus} className="flex items-center gap-2">
-                    <input type="hidden" name="taskId" value={task.id} />
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TASK_STATUS_STYLES[task.status] ?? "bg-slate-100 text-slate-600"}`}>
-                      {task.status.replace(/_/g, " ")}
-                    </span>
-                    <select
-                      name="status"
-                      defaultValue={task.status}
-                      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      {TASK_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-                    >
-                      Update
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-2">
+                    <form action={updateTaskStatus} className="flex items-center gap-2">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TASK_STATUS_STYLES[task.status] ?? "bg-slate-100 text-slate-600"}`}>
+                        {task.status.replace(/_/g, " ")}
+                      </span>
+                      <select
+                        name="status"
+                        defaultValue={task.status}
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      >
+                        {TASK_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
+                      >
+                        Update
+                      </button>
+                    </form>
+                    <DeleteButton
+                      action={deleteTask.bind(null, task.id, project.id)}
+                      confirmMessage="Delete this task?"
+                      label="Delete"
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -515,27 +540,34 @@ export default async function ProjectDetail({
                       {invoice.dueDate ? ` · Due ${invoice.dueDate.toLocaleDateString()}` : ""}
                     </p>
                   </div>
-                  <form action={updateInvoiceStatus} className="flex items-center gap-2">
-                    <input type="hidden" name="invoiceId" value={invoice.id} />
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${INVOICE_STATUS_STYLES[invoice.status] ?? "bg-slate-100 text-slate-600"}`}>
-                      {invoice.status}
-                    </span>
-                    <select
-                      name="status"
-                      defaultValue={invoice.status}
-                      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      {INVOICE_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-                    >
-                      Update
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-2">
+                    <form action={updateInvoiceStatus} className="flex items-center gap-2">
+                      <input type="hidden" name="invoiceId" value={invoice.id} />
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${INVOICE_STATUS_STYLES[invoice.status] ?? "bg-slate-100 text-slate-600"}`}>
+                        {invoice.status}
+                      </span>
+                      <select
+                        name="status"
+                        defaultValue={invoice.status}
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      >
+                        {INVOICE_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
+                      >
+                        Update
+                      </button>
+                    </form>
+                    <DeleteButton
+                      action={deleteInvoice.bind(null, invoice.id, project.id)}
+                      confirmMessage="Delete this invoice?"
+                      label="Delete"
+                    />
+                  </div>
                 </li>
               ))}
             </ul>

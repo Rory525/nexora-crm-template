@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/requireAuth";
+import DeleteButton from "@/components/DeleteButton";
+import { deleteContact } from "@/lib/actions/deleteContact";
 
 export default async function ContactDetail({
   params,
@@ -166,13 +168,21 @@ export default async function ContactDetail({
               />
             </div>
 
-            <button
+                       <button
               type="submit"
               className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               Save Changes
             </button>
           </form>
+
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <DeleteButton
+              action={deleteContact.bind(null, contact.id)}
+              confirmMessage="Delete this contact? This can't be undone."
+              label="Delete Contact"
+            />
+          </div>
         </div>
 
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
